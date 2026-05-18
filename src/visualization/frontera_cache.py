@@ -17,7 +17,7 @@ def obtener_grafico_frontera(
     activos: tuple[str, ...],
     pesos_forzados: tuple[tuple[str, float], ...],
     tasa_libre_riesgo_anual: float,
-    _version: int = 12,
+    _version: int = 13,
 ) -> object:
     """Calcula y cachea la figura de frontera eficiente + CML."""
     columnas = [a for a in activos if a in precios.columns]

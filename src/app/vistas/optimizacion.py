@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import streamlit as st
 
+from src.app.scroll import scroll_al_inicio
 from src.visualization.correlacion_cache import obtener_mapa_correlacion
 from src.visualization.frontera_cache import obtener_grafico_frontera
 from src.visualization.tabla_comparativa_cache import obtener_tabla_comparativa
@@ -149,3 +150,4 @@ def mostrar() -> None:
 
     _mostrar_tabla_comparativa(precios, activos_clave)
     _mostrar_frontera_eficiente(precios, activos_clave)
+    scroll_al_inicio(tras_graficos=True)

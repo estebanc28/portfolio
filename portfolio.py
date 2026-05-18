@@ -15,6 +15,7 @@ if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
 
 from src.app.navigation import renderizar_menu
+from src.app.scroll import aplicar_scroll_al_entrar_vista
 from src.app.theme import CSS_TEMA
 from src.app.vistas import carga_datos, inicio, inputs, optimizacion, resultados
 
@@ -38,6 +39,7 @@ st.markdown(
 )
 
 opcion = renderizar_menu()
+aplicar_scroll_al_entrar_vista(opcion)
 
 RUTAS: dict[str, Callable[[], None]] = {
     "Inicio": inicio.mostrar,

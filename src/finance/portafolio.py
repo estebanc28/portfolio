@@ -10,8 +10,12 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize
 
+from src.finance.markowitz import (
+    calcular_metricas_mv,
+    calcular_mu_sigma_anual,
+    optimizar_max_sharpe_mv,
+)
 from src.finance.metricas import (
     MESES_POR_ANIO,
     calcular_rendimiento_esperado_anualizado,
@@ -96,88 +100,24 @@ def calcular_metricas_portafolio(
     )
 
 
-def _construir_pesos_completos(
-    activos: list[str],
-    pesos_libres: np.ndarray,
-    indices_libres: list[int],
-    pesos_forzados: dict[str, float],
-) -> np.ndarray:
-    n = len(activos)
-    pesos = np.zeros(n, dtype=float)
-    for ticker, valor in pesos_forzados.items():
-        if ticker in activos:
-            pesos[activos.index(ticker)] = valor
-    for j, idx in enumerate(indices_libres):
-        pesos[idx] = pesos_libres[j]
-    return pesos
-
-
 def optimizar_max_sharpe(
     rendimientos: pd.DataFrame,
     tasa_libre_riesgo_anual: float,
     pesos_forzados: dict[str, float] | None = None,
 ) -> np.ndarray:
     """
-    Maximiza la razón de Sharpe (anual) con restricciones long-only y suma = 1.
+    Maximiza la razón de Sharpe (anual) en espacio μ–Σ (misma lógica que la frontera).
     """
     activos = list(rendimientos.columns)
-    forzados = {k: v for k, v in (pesos_forzados or {}).items() if k in activos}
-    n = len(activos)
-
-    if n == 0:
+    if not activos:
         raise ValueError("No hay activos para optimizar.")
 
-    indices_forzados = {activos.index(t) for t in forzados}
-    indices_libres = [i for i in range(n) if i not in indices_forzados]
-    suma_forzada = sum(forzados.values())
-
-    if suma_forzada > 1.0 + 1e-9:
+    forzados = {k: v for k, v in (pesos_forzados or {}).items() if k in activos}
+    if sum(forzados.values()) > 1.0 + 1e-9:
         raise ValueError("La suma de pesos forzados supera el 100%.")
 
-    # Sin grados de libertad: solo retornar los pesos forzados normalizados
-    if not indices_libres:
-        pesos = np.array([forzados.get(a, 0.0) for a in activos])
-        total = pesos.sum()
-        return pesos / total if total > 0 else pesos
-
-    if len(indices_libres) == 1:
-        pesos = np.zeros(n)
-        for t, v in forzados.items():
-            pesos[activos.index(t)] = v
-        pesos[indices_libres[0]] = max(0.0, 1.0 - suma_forzada)
-        return pesos
-
-    restante = max(0.0, 1.0 - suma_forzada)
-    x0 = np.full(len(indices_libres), restante / len(indices_libres))
-    bounds = [(0.0, 1.0)] * len(indices_libres)
-
-    def objetivo(x: np.ndarray) -> float:
-        w = _construir_pesos_completos(activos, x, indices_libres, forzados)
-        metricas = calcular_metricas_portafolio(
-            rendimientos, w, tasa_libre_riesgo_anual, activos=activos
-        )
-        if np.isnan(metricas.sharpe):
-            return 1e6
-        return -metricas.sharpe
-
-    restricciones = [
-        {"type": "eq", "fun": lambda x: float(np.sum(x) - restante)},
-    ]
-
-    resultado = minimize(
-        objetivo,
-        x0,
-        method="SLSQP",
-        bounds=bounds,
-        constraints=restricciones,
-        options={"maxiter": 500, "ftol": 1e-9},
-    )
-
-    if not resultado.success:
-        # Respaldo: pesos iguales entre activos libres
-        return pesos_iguales(activos, forzados)
-
-    return _construir_pesos_completos(activos, resultado.x, indices_libres, forzados)
+    mu, sigma = calcular_mu_sigma_anual(rendimientos)
+    return optimizar_max_sharpe_mv(mu, sigma, tasa_libre_riesgo_anual, activos, forzados)
 
 
 def filtrar_y_renormalizar_pesos(
@@ -245,15 +185,30 @@ def construir_tabla_comparativa(
     activos = list(rendimientos.columns)
     forzados = pesos_forzados or {}
 
+    mu, sigma = calcular_mu_sigma_anual(rendimientos)
+
     w_igual = pesos_iguales(activos, forzados)
     w_opt = optimizar_max_sharpe(rendimientos, tasa_libre_riesgo_anual, forzados)
     w_opt, _ = filtrar_y_renormalizar_pesos(w_opt, activos, pesos_forzados=forzados)
 
-    m_igual = calcular_metricas_portafolio(
-        rendimientos, w_igual, tasa_libre_riesgo_anual, activos=activos
+    ret_i, vol_i, sharpe_i = calcular_metricas_mv(
+        w_igual, mu, sigma, tasa_libre_riesgo_anual
     )
-    m_opt = calcular_metricas_portafolio(
-        rendimientos, w_opt, tasa_libre_riesgo_anual, activos=activos
+    ret_o, vol_o, sharpe_o = calcular_metricas_mv(
+        w_opt, mu, sigma, tasa_libre_riesgo_anual
+    )
+
+    m_igual = MetricasPortafolio(
+        rendimiento_anual=ret_i,
+        volatilidad_anual=vol_i,
+        sharpe=sharpe_i,
+        pesos=pd.Series(w_igual, index=activos, name="peso"),
+    )
+    m_opt = MetricasPortafolio(
+        rendimiento_anual=ret_o,
+        volatilidad_anual=vol_o,
+        sharpe=sharpe_o,
+        pesos=pd.Series(w_opt, index=activos, name="peso"),
     )
 
     tabla = pd.DataFrame(

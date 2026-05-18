@@ -138,6 +138,8 @@ La aplicación contará con dos decisiones de diseño globales:
 
    - Ratio de Sharpe 
 
+   - Las métricas de la tabla y el tooltip del gráfico (frontera) usan la **misma fórmula μ–Σ** de Markowitz.
+
 
 
 ---

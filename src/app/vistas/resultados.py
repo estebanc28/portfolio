@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import streamlit as st
 
+from src.app.scroll import scroll_al_inicio
 from src.finance.resultados import VALOR_INICIAL_DEFECTO
 from src.visualization.resultados_cache import obtener_resultados_finales
 
@@ -216,3 +217,4 @@ def mostrar() -> None:
     st.plotly_chart(figura, use_container_width=True)
     _mostrar_pregunta_inversion(final_igual, final_opt, final_bench)
     _mostrar_nota_explicativa(pesos_igual, pesos_opt)
+    scroll_al_inicio(tras_graficos=True)
