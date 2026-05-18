@@ -166,6 +166,10 @@ La aplicación contará con dos decisiones de diseño globales:
 
 - Inclusión de la **Línea del Mercado de Capitales (CML)** utilizando la tasa libre de riesgo definida en la Funcionalidad 1.
 
+- Bloque **Interpretación del Gráfico** debajo del gráfico (dos tarjetas): frontera eficiente y CML, con viñetas explicativas y capitalización fija según el diseño de referencia (no aplica la regla de la leyenda).
+
+- En la **leyenda** del gráfico, capitalizar la primera letra de cada palabra con más de 4 letras (siglas como CML se conservan).
+
 
 
 ---
