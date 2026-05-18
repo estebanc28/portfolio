@@ -192,17 +192,25 @@ La aplicación contará con dos decisiones de diseño globales:
 
    - Los activos no elegidos quedan con peso 0. 
 
-- Gráfico de evolución histórica (base 100) para: 
+- Tabla **horizontal** de pesos del portafolio optimizado (solo columnas con peso **&gt; 0 %**; respeta pesos fijos).
 
-   - Portafolio de pesos iguales 
+   - Tras optimizar, activos con peso **&lt; 0,1 %** se eliminan del portafolio final (se muestran como **0 %**), se renormalizan los restantes y se listan como *no utilizados*.
 
-   - Portafolio optimizado 
+- Gráfico de evolución histórica (valor inicial **$1,000**, ventana del CSV) con fondo negro, ejes *Tiempo* y *Valor Acumulado*, para: 
+
+   - Portafolio de pesos iguales (entre activos seleccionados) 
+
+   - Portafolio optimizado (con restricciones si las hubiera) 
 
    - S&P 500 como **benchmark** 
 
+- La tabla va **arriba** y el gráfico **debajo**.
+
 - Responder explícitamente la pregunta: 
 
-  > **“Si hubieras invertido $1000 hace 5 años, ¿cuánto tendrías hoy?”**
+  > **“Si hubieras invertido $1,000 en el periodo seleccionado, ¿cuánto tendrías hoy?”**
+
+- **Nota explicativa** al final del gráfico (dos columnas): composición del portafolio de pesos iguales y del optimizado.
 
 
 

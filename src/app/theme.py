@@ -55,6 +55,17 @@ CSS_TEMA = (
         padding: 0 !important;
         white-space: nowrap !important;
     }
+    /* Mismo estilo que title de gráficos Plotly (frontera, correlación, etc.) */
+    .titulo-seccion-grafico {
+        color: #f0f0f0 !important;
+        font-size: 16px !important;
+        font-weight: bold !important;
+        font-family: Arial, sans-serif !important;
+        line-height: 1.2 !important;
+        margin: 1.25rem 0 0.35rem 0 !important;
+        padding: 0 !important;
+        text-align: left !important;
+    }
     /* Subtítulos de sección (Descripción General, etc.) */
     [data-testid="stMain"] h3 {
         font-size: 1.15rem !important;

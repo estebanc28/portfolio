@@ -31,8 +31,10 @@ def obtener_mapa_correlacion(
 def invalidar_cache_correlacion() -> None:
     """Limpia la caché al cargar nuevos datos o cambiar la configuración."""
     from src.visualization.frontera_cache import invalidar_cache_frontera
+    from src.visualization.resultados_cache import invalidar_cache_resultados
     from src.visualization.tabla_comparativa_cache import invalidar_cache_tabla_comparativa
 
     obtener_mapa_correlacion.clear()
     invalidar_cache_tabla_comparativa()
     invalidar_cache_frontera()
+    invalidar_cache_resultados()

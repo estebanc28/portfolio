@@ -6,8 +6,10 @@ import numpy as np
 import pandas as pd
 
 from src.finance.portafolio import (
+    UMBRAL_PESO_MINIMO,
     calcular_metricas_portafolio,
     construir_tabla_comparativa,
+    filtrar_y_renormalizar_pesos,
     optimizar_max_sharpe,
     pesos_iguales,
 )
@@ -61,3 +63,24 @@ def test_tabla_comparativa_tiene_filas_esperadas():
     assert len(tabla) == 3
     assert "Pesos Iguales" in tabla.columns
     assert "Portafolio Optimizado" in tabla.columns
+
+
+def test_filtrar_umbral_elimina_peso_diminuto():
+    activos = ["A", "B", "C"]
+    w = np.array([0.5, 0.499, 0.0003])
+    w_filtrado, descartados = filtrar_y_renormalizar_pesos(w, activos, umbral=UMBRAL_PESO_MINIMO)
+    assert "C" in descartados
+    assert np.isclose(w_filtrado[2], 0.0)
+    assert np.isclose(w_filtrado.sum(), 1.0)
+    assert w_filtrado[0] > w_filtrado[2]
+
+
+def test_filtrar_respeta_peso_forzado():
+    activos = ["A", "B"]
+    w = np.array([0.15, 0.85])
+    w_filtrado, descartados = filtrar_y_renormalizar_pesos(
+        w, activos, umbral=UMBRAL_PESO_MINIMO, pesos_forzados={"A": 0.15}
+    )
+    assert descartados == []
+    assert np.isclose(w_filtrado[0], 0.15)
+    assert np.isclose(w_filtrado.sum(), 1.0)

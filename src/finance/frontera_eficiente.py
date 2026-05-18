@@ -20,7 +20,7 @@ from src.finance.metricas import (
     calcular_matriz_covarianza,
     calcular_rendimientos,
 )
-from src.finance.portafolio import pesos_iguales
+from src.finance.portafolio import filtrar_y_renormalizar_pesos, pesos_iguales
 
 
 @dataclass(frozen=True)
@@ -216,6 +216,8 @@ def calcular_frontera_eficiente(
     w_tang = _optimizar_max_sharpe_mv(mu, sigma, tasa_libre_riesgo_anual, activos, forzados)
     if w_tang is None:
         raise ValueError("No se pudo calcular el portafolio de máximo Sharpe.")
+
+    w_tang, _ = filtrar_y_renormalizar_pesos(w_tang, activos, pesos_forzados=forzados)
 
     w_igual = pesos_iguales(activos, forzados)
     p_igual = _riesgo_rendimiento_mv(w_igual, mu, sigma)

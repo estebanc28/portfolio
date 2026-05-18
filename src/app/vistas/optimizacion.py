@@ -50,7 +50,12 @@ def _mostrar_tabla_comparativa(precios, activos_clave: tuple[str, ...]) -> None:
     st.session_state["pesos_portafolio_igual"] = pesos_igual
     st.session_state["pesos_portafolio_optimizado"] = pesos_opt
 
-    st.markdown("#### Comparación de Portafolios: Pesos Iguales vs Optimizado")
+    st.markdown(
+        '<p class="titulo-seccion-grafico">'
+        "Comparación de Portafolios: Pesos Iguales vs Optimizado"
+        "</p>",
+        unsafe_allow_html=True,
+    )
     st.dataframe(
         tabla,
         use_container_width=True,

@@ -19,6 +19,9 @@ from src.finance.metricas import (
     calcular_volatilidad_anualizada,
 )
 
+# Pesos menores a este umbral (0,1 %) se tratan como 0 en el portafolio final
+UMBRAL_PESO_MINIMO = 0.001
+
 
 @dataclass(frozen=True)
 class MetricasPortafolio:
@@ -177,6 +180,57 @@ def optimizar_max_sharpe(
     return _construir_pesos_completos(activos, resultado.x, indices_libres, forzados)
 
 
+def filtrar_y_renormalizar_pesos(
+    pesos: np.ndarray | pd.Series,
+    activos: list[str],
+    umbral: float = UMBRAL_PESO_MINIMO,
+    pesos_forzados: dict[str, float] | None = None,
+) -> tuple[np.ndarray, list[str]]:
+    """
+    Elimina posiciones con peso < umbral (salvo pesos fijos del usuario) y renormaliza a 1.
+
+    Retorna el vector de pesos ajustado y la lista de tickers descartados por umbral.
+    """
+    forzados = pesos_forzados or {}
+    forzados_set = set(forzados.keys())
+    n = len(activos)
+
+    if isinstance(pesos, pd.Series):
+        w = np.array([float(pesos.get(t, 0.0)) for t in activos], dtype=float)
+    else:
+        w = np.asarray(pesos, dtype=float).copy()
+
+    if len(w) != n:
+        raise ValueError("La longitud de pesos no coincide con la lista de activos.")
+
+    descartados: list[str] = []
+    for i, ticker in enumerate(activos):
+        if ticker in forzados_set:
+            w[i] = float(forzados[ticker])
+            continue
+        if w[i] < umbral:
+            if w[i] > 1e-12:
+                descartados.append(ticker)
+            w[i] = 0.0
+
+    suma_forzada = sum(w[i] for i, t in enumerate(activos) if t in forzados_set)
+    indices_libres = [
+        i for i, t in enumerate(activos) if t not in forzados_set and w[i] >= umbral
+    ]
+    suma_libre = float(w[indices_libres].sum()) if indices_libres else 0.0
+
+    restante = max(0.0, 1.0 - suma_forzada)
+    if indices_libres and suma_libre > 0:
+        w[indices_libres] = w[indices_libres] * (restante / suma_libre)
+    elif w.sum() > 0:
+        w = w / w.sum()
+
+    if w.sum() <= 0:
+        raise ValueError("Tras aplicar el umbral mínimo no quedó ningún activo en el portafolio.")
+
+    return w, descartados
+
+
 def construir_tabla_comparativa(
     precios: pd.DataFrame,
     tasa_libre_riesgo_anual: float,
@@ -193,6 +247,7 @@ def construir_tabla_comparativa(
 
     w_igual = pesos_iguales(activos, forzados)
     w_opt = optimizar_max_sharpe(rendimientos, tasa_libre_riesgo_anual, forzados)
+    w_opt, _ = filtrar_y_renormalizar_pesos(w_opt, activos, pesos_forzados=forzados)
 
     m_igual = calcular_metricas_portafolio(
         rendimientos, w_igual, tasa_libre_riesgo_anual, activos=activos
